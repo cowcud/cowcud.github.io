@@ -1,3 +1,4 @@
+// Get HTML elements for accessing in code
 const textbox = document.getElementById("textbox");
 const voiceList = document.getElementById("voice-list");
 const voiceFilter = document.getElementById("voice-filter");
@@ -6,69 +7,88 @@ const selectedVoiceSpan = document.getElementById("selected-voice");
 const voiceListContent = document.getElementById("voice-list-content");
 const speedSlider = document.getElementById("speed-slider");
 const speedDisplay = document.getElementById("speed-display");
+
+// Get speech synthesizer for browser
 const speechSynthesis = window.speechSynthesis;
 
-// Get available voices
+// Get list of available voices provided by the speech synthesizer
 let availableVoices = [];
 speechSynthesis.onvoiceschanged = () => {
   availableVoices = speechSynthesis.getVoices();
   populateVoicesDropdown(availableVoices);
 };
 
+/*
+  Toggle showing/hiding the voice list drop down
+*/
 function toggleVoiceList() {
   voiceList.style.display = voiceList.style.display === "block" ? "none" : "block";
   if (voiceList.style.display === "block") {
-voiceFilter.focus(); // Focus the input when the list is opened
-filterVoices(); // Filter with previous filter value (if any)
+    voiceFilter.focus(); // Focus the input when the list is opened
+    filterVoices(); // Filter the list with previous filter value (if any)
   }
 }
 
+/*
+  Get user search term from the input box and filter the full voice list on it
+*/
 function filterVoices() {
-const searchTerm = voiceFilter.value.toLowerCase();
-const filteredVoices = availableVoices.filter((voice) =>
-voice.name.toLowerCase().includes(searchTerm) ||
-voice.lang.toLowerCase().includes(searchTerm)
-);
-populateVoicesDropdown(filteredVoices);
+  const searchTerm = voiceFilter.value.toLowerCase();
+  const filteredVoices = availableVoices.filter((voice) =>
+    voice.name.toLowerCase().includes(searchTerm)
+  );
+  populateVoicesDropdown(filteredVoices);
 }
 
-// Populate voices dropdown
+/*
+  Populate the voices dropdown with the (possibly filtered) voice list
+*/
 function populateVoicesDropdown(voices) {
-  // Set default voice on first load (if stored preference)
-  const firstVoice = (availableVoices[0]||{}).name;
+  // Set default voice on first load (if user has a stored preference),
+  // otherwise just default to first available voice
+  const firstVoice = (availableVoices[0] || {}).name;
   const storedVoice = localStorage.getItem("selectedVoice") || firstVoice;
   if (storedVoice) {
-selectedVoiceSpan.textContent = storedVoice;
+    selectedVoiceSpan.textContent = storedVoice;
   }
-  
-  voiceListContent.innerHTML = ""; // Clear only the voice list content
+
+
+  // Clear the existing voice list
+  voiceListContent.innerHTML = "";
+
+  // Generate a new voice list
   voices.forEach((voice) => {
-  const voiceDiv = document.createElement("div");
-  if(voice.name == storedVoice) {
-voiceDiv.className = "voice-list-selected";
-  }
-  voiceDiv.textContent = `${voice.name}`;
-  voiceDiv.dataset.value = voice.name;
-  voiceDiv.addEventListener("click", () => {
-  selectVoice(voiceDiv);
+    const voiceDiv = document.createElement("div");
+    if (voice.name == storedVoice) {
+      voiceDiv.className = "voice-list-selected";
+    }
+    voiceDiv.textContent = `${voice.name}`;
+    voiceDiv.dataset.value = voice.name;
+    voiceDiv.addEventListener("click", () => {
+      selectVoice(voiceDiv); // Let user select a voice
+    });
+    voiceListContent.appendChild(voiceDiv);
   });
-  voiceListContent.appendChild(voiceDiv);
-  });
-  
+
+  // If the user previously selected a playback speed, default to that
   const storedSpeed = localStorage.getItem("selectedSpeed");
   if (storedSpeed) {
-speedSlider.value = storedSpeed;
+    speedSlider.value = storedSpeed;
   }
 }
 
+/*
+  Change current voice when user selects a voice from the dropdown,
+  either by clicking it or hitting Enter when scrolling the list of voices
+*/
 function selectVoice(selectedVoiceDiv) {
   // Remove "selected" class from previously selected voice
   const previouslySelected = voiceListContent.querySelector(".selected");
   if (previouslySelected) {
-previouslySelected.classList.remove("selected");
+    previouslySelected.classList.remove("selected");
   }
 
-  // Add "selected" class to the clicked voice
+  // Add "selected" class to the newly selected voice
   selectedVoiceDiv.classList.add("selected");
 
   // Update selected voice text
@@ -79,53 +99,59 @@ previouslySelected.classList.remove("selected");
 
   // Hide pop-up
   toggleVoiceList();
-  
+
   // Restart Speech
   speak();
 }
 
-// Speak the text
+/*
+  Speak the text in the textbox
+*/
 function speak() {
-  stop(); // Stop any currently playing audio
+  // Stop any currently playing audio
+  stop();
 
+  // Create a new utterance for the speech synthesizer
   const utterance = new SpeechSynthesisUtterance();
-  
-  const selectedText = getSelectedText() || textbox.value; // Get selected text (if any)
+
+  // Get user selected text (if any) or just use the textbox contents for the utterance
+  const selectedText = getSelectedText() || textbox.value;
   utterance.text = selectedText;
+
+  // Use the selected voice for the utterance
   utterance.voice = availableVoices.find(
-(voice) => voice.name === selectedVoiceSpan.textContent
+    (voice) => voice.name === selectedVoiceSpan.textContent
   );
-  
-  utterance.rate = speedSlider.value; // Set playback rate based on slider value
+
+  // Set the utterance playback rate based on slider value
+  utterance.rate = speedSlider.value;
+
+  // Speak the utterance
   speechSynthesis.speak(utterance);
-  
+
   // Store selected speed for future use
   localStorage.setItem("selectedSpeed", speedSlider.value);
 
-  // Update speed display
+  // Update the speed slider display
   updateSpeedDisplay();
 }
 
-// Don't speak whole text when remove selection
-function speakSelection() {
-  const selectedText = getSelectedText();
-  if (selectedText) { speak() }
-}
-
-// Get selected text function
+/*
+  Utility function to get the current selected text (if any)
+*/
 function getSelectedText() {
   const selection = window.getSelection();
   if (selection.toString().trim()) {
-return selection.toString().trim();
+    return selection.toString().trim();
   } else {
-return null;
+    return null;
   }
 }
-  
+
 // Stop speaking
 function stop() {
   if (speechSynthesis.speaking) {
-speechSynthesis.cancel();
+    speechSynthesis.cancel();
   }
 }
 
@@ -135,41 +161,83 @@ function updateSpeedDisplay() {
   speedDisplay.textContent = `${speed.toFixed(1)}%`;
 }
 
-// Add event listener for filtering
-voiceFilter.addEventListener("input", filterVoices);
+//////// EVENT HANDLERS ////////
 
-// Event listener for voice filter input
-voiceFilter.addEventListener("keyup", (event) => {
-  if (event.key === "Enter") {
-const firstVoiceDiv = voiceListContent.querySelector("div");
-if (firstVoiceDiv) {
-  selectVoice(firstVoiceDiv); // Select the first voice
+/*
+  Event handler called when the the user clicks to show or hide the voice dropdown
+*/
+function handleVoiceDropdownToggle() {
+  toggleVoiceList();
 }
+
+/*
+  Event handler called when the the user types in the filter box above the voice dropdown list
+*/
+function handleVoiceFilterKey(event) {
+  if (event.key === "Enter") {
+    const firstVoiceDiv = voiceListContent.querySelector("div");
+    if (firstVoiceDiv) {
+      selectVoice(firstVoiceDiv); // Select the first voice
+    }
   } else {
-filterVoices(); // Filter voices as usual on other key presses
+    filterVoices(); // Filter voices as usual on other key presses
   }
-});
+}
 
-// Event listener for voice dropdown click
-voiceDropdown.addEventListener("click", toggleVoiceList);
-
-// Event listener for voice selection
-voiceListContent.addEventListener("click", (event) => {
+/*
+  Event handler called when user clicks a voice in the dropdown list
+*/
+function handleVoiceListClick(event) {
   const selectedVoice = event.target;
   selectedVoiceSpan.textContent = selectedVoice.textContent;
-});
+}
 
-// Event listener for speed slider change
-speedSlider.addEventListener("change", () => {
+/*
+  Event handler called when the selected text changes so that we can speak
+  just the selected text and not the whole text
+*/
+function handleTextSelectionChange(event) {
+  // Figure out which text is highlighted
+  const selectedText = getSelectedText();
+
+  // If any text is selected, then just speak that text
+  if (selectedText) { speak() }
+}
+
+/*
+  Event handler called when user changes the playback speed slider position
+*/
+function handleSpeedSliderChange() {
+  // Refresh the speed display
   updateSpeedDisplay();
-  speak(); // Restart speaking with the new speed
-});
+
+  // Restart speaking with the new speed
+  speak();
+}
+
+//////// EVENT LISTENERS ////////
+
+// Event listener for voice dropdown click
+voiceDropdown.addEventListener("click", handleVoiceDropdownToggle);
+
+// Event listener for voice filter input
+voiceFilter.addEventListener("keyup", (event) => { handleVoiceFilterKey(event) });
+
+// Event listener for when user clicks to select a voice
+voiceListContent.addEventListener("click", (event) => { handleVoiceListClick(event) });
 
 // Event listener for text selection change
-document.addEventListener("selectionchange", speakSelection);
+document.addEventListener("selectionchange", (event) => { handleTextSelectionChange(event) });
 
-// Load preferences on page load
+// Event listener for speed slider change
+speedSlider.addEventListener("change", handleSpeedSliderChange);
+
+
+//////// MAIN ////////
+// On page load, get user saved preferences (if any) and use them to build the page
 window.onload = () => {
+  // Update default selected voice and 
   populateVoicesDropdown(availableVoices);
+  // Set playback speed slider position
   updateSpeedDisplay();
 };
