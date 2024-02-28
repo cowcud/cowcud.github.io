@@ -131,8 +131,7 @@ function speak() {
   );
 
   utterance.voice = matchingVoice;
-  utterance.lang = utterance.voice.lang;
-  console.log(utterance)
+  utterance.lang = utterance.voice.lang; // Ensure lang set so works on Android
 
   // Set the utterance playback rate based on slider value
   utterance.rate = speedSlider.value;
