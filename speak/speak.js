@@ -126,14 +126,13 @@ function speak() {
   utterance.text = selectedText;
 
   // Use the selected voice for the utterance
-  console.log('selectedVoice',selectedVoiceSpan.textContent)
-  console.log('availableVoices')
-  const availableVoiceNames = availableVoices.map((v) => v.name);
-  console.log(availableVoiceNames)
-  utterance.voice = availableVoices.find(
+  const matchingVoice = availableVoices.find(
     (voice) => voice.name === selectedVoiceSpan.textContent
   );
-  console.log('new voice',utterance.voice.name)
+
+  utterance.voice = matchingVoice;
+  utterance.lang = utterance.voice.lang;
+  console.log(utterance)
 
   // Set the utterance playback rate based on slider value
   utterance.rate = speedSlider.value;
