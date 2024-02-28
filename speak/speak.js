@@ -89,6 +89,10 @@ function populateVoicesDropdown(voices) {
   either by clicking it or hitting Enter when scrolling the list of voices
 */
 function selectVoice(selectedVoiceDiv) {
+  console.log(selectedVoiceDiv)
+  console.log(selectedVoiceDiv.dataset.value)
+  console.log(selectedVoiceDiv.textContent)
+  
   // Remove "selected" class from previously selected voice
   const previouslySelected = voiceListContent.querySelector(".selected");
   if (previouslySelected) {
