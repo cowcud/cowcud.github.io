@@ -69,9 +69,11 @@ function populateVoicesDropdown(voices) {
     voiceDiv.addEventListener("click", () => {
       selectVoice(voiceDiv); // Let user select a voice (Desktop)
     });
+    /*
     voiceDiv.addEventListener("touchstart", () => {
       selectVoice(voiceDiv); // Let user select a voice (Mobile)
     });
+    */
     
     voiceListContent.appendChild(voiceDiv);
   });
