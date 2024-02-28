@@ -27,7 +27,6 @@ speechSynthesis.onvoiceschanged = loadVoices; // Fix for issue where voices don'
 function toggleVoiceList() {
   voiceList.style.display = voiceList.style.display === "block" ? "none" : "block";
   if (voiceList.style.display === "block") {
-    voiceFilter.focus(); // Focus the input when the list is opened
     filterVoices(); // Filter the list with previous filter value (if any)
   }
 }

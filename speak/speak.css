@@ -184,11 +184,11 @@ label {
   }
 
   textarea {
-    font-size: 0.7em;
+    font-size: 0.8em;
   }
 
   textarea::placeholder {
-    font-size: 0.7em;
+    font-size: 0.8em;
   }
 
   input,
