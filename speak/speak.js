@@ -8,15 +8,18 @@ const voiceListContent = document.getElementById("voice-list-content");
 const speedSlider = document.getElementById("speed-slider");
 const speedDisplay = document.getElementById("speed-display");
 
-// Get speech synthesizer for browser
+// Get speech synthesizer for browser and initialize voice list
 const speechSynthesis = window.speechSynthesis;
+let availableVoices = [];
 
 // Get list of available voices provided by the speech synthesizer
-let availableVoices = [];
-speechSynthesis.onvoiceschanged = () => {
+function loadVoices() {
   availableVoices = speechSynthesis.getVoices();
+  console.log(`Found ${availableVoices.length} voices`);
   populateVoicesDropdown(availableVoices);
 };
+
+speechSynthesis.onvoiceschanged = loadVoices; // Fix for issue where voices don't always load on page load
 
 /*
   Toggle showing/hiding the voice list drop down
@@ -244,6 +247,9 @@ speedSlider.addEventListener("change", handleSpeedSliderChange);
 //////// MAIN ////////
 // On page load, get user saved preferences (if any) and use them to build the page
 window.onload = () => {
+  // Load voice list
+  loadVoices();
+
   // Update default selected voice and 
   populateVoicesDropdown(availableVoices);
   // Set playback speed slider position
