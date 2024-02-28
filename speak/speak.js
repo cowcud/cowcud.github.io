@@ -89,10 +89,6 @@ function populateVoicesDropdown(voices) {
   either by clicking it or hitting Enter when scrolling the list of voices
 */
 function selectVoice(selectedVoiceDiv) {
-  console.log(selectedVoiceDiv)
-  console.log(selectedVoiceDiv.dataset.value)
-  console.log(selectedVoiceDiv.textContent)
-  
   // Remove "selected" class from previously selected voice
   const previouslySelected = voiceListContent.querySelector(".selected");
   if (previouslySelected) {
@@ -130,9 +126,14 @@ function speak() {
   utterance.text = selectedText;
 
   // Use the selected voice for the utterance
+  console.log('selectedVoice',selectedVoiceSpan.textContent)
+  console.log('availableVoices')
+  const availableVoiceNames = availableVoices.map((v) => v.name);
+  console.log(availableVoiceNames)
   utterance.voice = availableVoices.find(
     (voice) => voice.name === selectedVoiceSpan.textContent
   );
+  console.log('new voice',utterance.voice.name)
 
   // Set the utterance playback rate based on slider value
   utterance.rate = speedSlider.value;
