@@ -140,12 +140,10 @@ function speak() {
   Utility function to get the current selected text (if any)
 */
 function getSelectedText() {
-  const selection = window.getSelection();
-  if (selection.toString().trim()) {
-    return selection.toString().trim();
-  } else {
-    return null;
-  }
+  const selectedTextStart = textbox.selectionStart;
+  const selectedTextEnd = textbox.selectionEnd;
+  const selectedText = (selectedTextStart !== selectedTextEnd) ? textbox.value.substring(selectedTextStart, selectedTextEnd) : null;
+  return selectedText;
 }
 
 // Stop speaking
@@ -197,7 +195,15 @@ function handleVoiceListClick(event) {
   just the selected text and not the whole text
 */
 function handleTextSelectionChange(event) {
-  // Figure out which text is highlighted
+  // Only handle selection within the textbox
+  // See: https://stackoverflow.com/questions/45757943/
+  let elem = document.activeElement;
+  let elemType = elem ? elem.tagName.toLowerCase() : 'none';
+  if (elemType !== 'textarea') {
+    return;
+  }
+  
+  // Figure out which text is highlighted in the textbox
   const selectedText = getSelectedText();
 
   // If any text is selected, then just speak that text
@@ -226,7 +232,8 @@ voiceFilter.addEventListener("keyup", (event) => { handleVoiceFilterKey(event) }
 // Event listener for when user clicks to select a voice
 voiceListContent.addEventListener("click", (event) => { handleVoiceListClick(event) });
 
-// Event listener for text selection change
+// Event listener for text selection change - Note: This is attached to document because
+// it does not fire when attached to the textbox directly
 document.addEventListener("selectionchange", (event) => { handleTextSelectionChange(event) });
 
 // Event listener for speed slider change
