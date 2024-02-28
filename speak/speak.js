@@ -68,8 +68,12 @@ function populateVoicesDropdown(voices) {
     voiceDiv.textContent = `${voice.name}`;
     voiceDiv.dataset.value = voice.name;
     voiceDiv.addEventListener("click", () => {
-      selectVoice(voiceDiv); // Let user select a voice
+      selectVoice(voiceDiv); // Let user select a voice (Desktop)
     });
+    voiceDiv.addEventListener("touchstart", () => {
+      selectVoice(voiceDiv); // Let user select a voice (Mobile)
+    });
+    
     voiceListContent.appendChild(voiceDiv);
   });
 
@@ -186,14 +190,6 @@ function handleVoiceFilterKey(event) {
 }
 
 /*
-  Event handler called when user clicks (or touches) a voice in the dropdown list
-*/
-function handleVoiceListClick(event) {
-  const selectedVoice = event.target;
-  selectedVoiceSpan.textContent = selectedVoice.textContent;
-}
-
-/*
   Event handler called when the selected text changes so that we can speak
   just the selected text and not the whole text
 */
@@ -231,10 +227,6 @@ voiceDropdown.addEventListener("click", handleVoiceDropdownToggle);
 
 // Event listener for voice filter input
 voiceFilter.addEventListener("keyup", (event) => { handleVoiceFilterKey(event) });
-
-// Event listener for when user clicks (or touches) to select a voice
-voiceListContent.addEventListener("click", (event) => { handleVoiceListClick(event) });
-voiceListContent.addEventListener("touchstart", (event) => { handleVoiceListClick(event) });
 
 // Event listener for text selection change - Note: This is attached to document because
 // it does not fire when attached to the textbox directly
