@@ -1,15 +1,47 @@
+//#region Preparation
+
 // Get HTML elements for accessing in code
+const buttonsContainer = document.getElementById("buttons-container");
+const voiceContainer = document.getElementById("voice-container");
 const textbox = document.getElementById("textbox");
-const voiceList = document.getElementById("voice-list");
-const voiceFilter = document.getElementById("voice-filter");
+const micButtonSpan = document.getElementById("mic-button-span");
+const micButton = document.getElementById("mic-button");
 const voiceDropdown = document.getElementById("voice-dropdown");
 const selectedVoiceSpan = document.getElementById("selected-voice");
+const voiceList = document.getElementById("voice-list");
+const voiceFilter = document.getElementById("voice-filter");
 const voiceListContent = document.getElementById("voice-list-content");
 const speedSlider = document.getElementById("speed-slider");
 const speedDisplay = document.getElementById("speed-display");
 
-// Get speech synthesizer for browser and initialize voice list
-const speechSynthesis = window.speechSynthesis;
+// Get speech synthesizer and speech recognition
+let speechSynthesis = (window.speechSynthesis) ? window.speechSynthesis : null;
+let speechRecognition = (window.SpeechRecognition || window.webkitSpeechRecognition) ? new (window.SpeechRecognition || window.webkitSpeechRecognition)() : null;
+let speechRecognizing = false;
+
+// Enable text input if speech synthesis is available
+if (speechSynthesis) {
+  buttonsContainer.style.display = "block";
+  voiceContainer.style.display = "block";
+} else {
+  textbox.disabled = true;
+  textbox.value = "I'm sorry, your browser does not support text-to-speech."
+  micButtonSpan.style.display = "none";
+  console.error("Speech Synthesis API not supported");
+}
+
+// Enable the mic button if speech recognition is available
+if (speechRecognition) {
+  //TBD - micButtonSpan.style.display = "block"; // Turn on the microphone icon if the browser supports speech recognition
+  speechRecognition.interimResults = true; // Enable interim results for display
+} else {
+  console.error("Speech Recognition API not supported");
+}
+
+//#endregion
+
+//#region Voice list generation and handling
+
 let availableVoices = [];
 
 // Get list of available voices provided by the speech synthesizer
@@ -20,6 +52,39 @@ function loadVoices() {
 };
 
 speechSynthesis.onvoiceschanged = loadVoices; // Fix for issue where voices don't always load on page load
+
+/*
+  Populate the voices dropdown with the (possibly filtered) voice list
+*/
+function populateVoicesDropdown(voices) {
+  // 
+  const currentVoice = getCurrentVoice();
+  selectedVoiceSpan.textContent = buildVoiceName(currentVoice);
+
+  // Clear the existing voice list
+  voiceListContent.innerHTML = "";
+
+  // Generate a new voice list
+  voices.forEach((voice) => {
+    const voiceDiv = document.createElement("div");
+    if (buildVoiceName(voice) == buildVoiceName(currentVoice)) {
+      voiceDiv.className = "voice-list-selected";
+    }
+    voiceDiv.textContent = buildVoiceName(voice);
+    voiceDiv.dataset.value = buildVoiceName(voice);
+    voiceDiv.addEventListener("click", () => {
+      selectVoice(voiceDiv); // Let user select a voice (Desktop)
+    });
+
+    voiceListContent.appendChild(voiceDiv);
+  });
+
+  // If the user previously selected a playback speed, default to that
+  const storedSpeed = localStorage.getItem("selectedSpeed");
+  if (storedSpeed) {
+    speedSlider.value = storedSpeed;
+  }
+}
 
 /*
   Toggle showing/hiding the voice list drop down
@@ -37,52 +102,48 @@ function toggleVoiceList() {
 function filterVoices() {
   const searchTerm = voiceFilter.value.toLowerCase();
   const filteredVoices = availableVoices.filter((voice) =>
-    voice.name.toLowerCase().includes(searchTerm)
+    buildVoiceName(voice).toLowerCase().includes(searchTerm)
   );
   populateVoicesDropdown(filteredVoices);
 }
 
 /*
-  Populate the voices dropdown with the (possibly filtered) voice list
+  Utility function to get current stored voice
 */
-function populateVoicesDropdown(voices) {
-  // Set default voice on first load (if user has a stored preference),
-  // otherwise just default to first available voice
-  const firstVoice = (availableVoices[0] || {}).name;
-  const storedVoice = localStorage.getItem("selectedVoice") || firstVoice;
-  if (storedVoice) {
-    selectedVoiceSpan.textContent = storedVoice;
+function getCurrentVoice() {
+  // Use first available voice by default
+  const firstVoice = (availableVoices[0] || {});
+
+  // If the user chose a voice before, use that instead
+  const selectedVoice = localStorage.getItem("selectedVoice");
+  return selectedVoice && selectedVoice.name ? JSON.parse(selectedVoice) : firstVoice;
+}
+
+/* 
+  Utility function for building a display name for a voice
+*/
+function buildVoiceName(voice) {
+  return `${voice.name} (${voice.lang})`
+}
+
+/*
+  Utility function to get the Speech Synthesis voice associated with a voice name
+*/
+function getVoice(voiceName) {
+  let matchingVoice = {};
+
+  // Extract voice name (e.g. "Microsoft George English (United Kingdom)"
+  // and language code (e.g. "en-GB")
+  const match = voiceName.match(/(.*)\s*\((.*)\)/);
+
+  // Try and find a list of voices matching those parameters
+  if (match) {
+    matchingVoice = availableVoices.find(
+      (voice) => voice.name == match[1].trim() && voice.lang == match[2].trim()
+    );
   }
 
-
-  // Clear the existing voice list
-  voiceListContent.innerHTML = "";
-
-  // Generate a new voice list
-  voices.forEach((voice) => {
-    const voiceDiv = document.createElement("div");
-    if (voice.name == storedVoice) {
-      voiceDiv.className = "voice-list-selected";
-    }
-    voiceDiv.textContent = `${voice.name}`;
-    voiceDiv.dataset.value = voice.name;
-    voiceDiv.addEventListener("click", () => {
-      selectVoice(voiceDiv); // Let user select a voice (Desktop)
-    });
-    /*
-    voiceDiv.addEventListener("touchstart", () => {
-      selectVoice(voiceDiv); // Let user select a voice (Mobile)
-    });
-    */
-    
-    voiceListContent.appendChild(voiceDiv);
-  });
-
-  // If the user previously selected a playback speed, default to that
-  const storedSpeed = localStorage.getItem("selectedSpeed");
-  if (storedSpeed) {
-    speedSlider.value = storedSpeed;
-  }
+  return matchingVoice || {};
 }
 
 /*
@@ -100,24 +161,28 @@ function selectVoice(selectedVoiceDiv) {
   selectedVoiceDiv.classList.add("selected");
 
   // Update selected voice text
-  selectedVoiceSpan.textContent = selectedVoiceDiv.textContent;
+  const newVoice = getVoice(selectedVoiceDiv.textContent);
+  selectedVoiceSpan.textContent = buildVoiceName(newVoice);
 
   // Store selected voice for future use
-  localStorage.setItem("selectedVoice", selectedVoiceSpan.textContent);
+  localStorage.setItem("selectedVoice", JSON.stringify(newVoice));
 
   // Hide pop-up
   toggleVoiceList();
 
   // Restart Speech
-  speak();
+  startSpeaking();
 }
+//#endregion
+
+//#region Text-to-Speech
 
 /*
   Speak the text in the textbox
 */
-function speak() {
+function startSpeaking() {
   // Stop any currently playing audio
-  stop();
+  stopSpeaking();
 
   // Create a new utterance for the speech synthesizer
   const utterance = new SpeechSynthesisUtterance();
@@ -126,9 +191,11 @@ function speak() {
   const selectedText = getSelectedText() || textbox.value;
   utterance.text = selectedText;
 
+  const currentVoice = getVoice(selectedVoiceSpan.textContent);
+
   // Use the selected voice for the utterance
   const matchingVoice = availableVoices.find(
-    (voice) => voice.name === selectedVoiceSpan.textContent
+    (voice) => buildVoiceName(voice) === buildVoiceName(currentVoice)
   );
 
   utterance.voice = matchingVoice;
@@ -140,11 +207,15 @@ function speak() {
   // Speak the utterance
   speechSynthesis.speak(utterance);
 
-  // Store selected speed for future use
-  localStorage.setItem("selectedSpeed", speedSlider.value);
-
   // Update the speed slider display
   updateSpeedDisplay();
+}
+
+// Stop speaking
+function stopSpeaking() {
+  if (speechSynthesis.speaking) {
+    speechSynthesis.cancel();
+  }
 }
 
 /*
@@ -157,20 +228,21 @@ function getSelectedText() {
   return selectedText;
 }
 
-// Stop speaking
-function stop() {
-  if (speechSynthesis.speaking) {
-    speechSynthesis.cancel();
-  }
-}
+//#endregion
 
-// Update speed display function
+//#region Speed control handling
+
+/*
+  Calculate and display the current speed percentage
+*/
 function updateSpeedDisplay() {
-  const speed = speedSlider.value * 100; // Convert to percentage
+  const speed = speedSlider.value * 100;
   speedDisplay.textContent = `${speed.toFixed(1)}%`;
 }
 
-//////// EVENT HANDLERS ////////
+//#endregion
+
+//#region Event Handlers - Speech Synthesis
 
 /*
   Event handler called when the the user clicks to show or hide the voice dropdown
@@ -205,26 +277,38 @@ function handleTextSelectionChange(event) {
   if (elemType !== 'textarea') {
     return;
   }
-  
+
   // Figure out which text is highlighted in the textbox
   const selectedText = getSelectedText();
 
   // If any text is selected, then just speak that text
-  if (selectedText) { speak() }
+  if (selectedText) { startSpeaking() }
+}
+
+/*
+  Event handler called when user pastes new text into the text box
+*/
+function handleTextPasteChange(event) {
+  window.setTimeout(startSpeaking,1)
 }
 
 /*
   Event handler called when user changes the playback speed slider position
 */
 function handleSpeedSliderChange() {
+  // Store selected speed for future use
+  localStorage.setItem("selectedSpeed", speedSlider.value);
+
   // Refresh the speed display
   updateSpeedDisplay();
 
   // Restart speaking with the new speed
-  speak();
+  startSpeaking();
 }
 
-//////// EVENT LISTENERS ////////
+//#endregion
+
+//#region Event Listeners - Speech Synthesis
 
 // Event listener for voice dropdown click
 voiceDropdown.addEventListener("click", handleVoiceDropdownToggle);
@@ -236,11 +320,74 @@ voiceFilter.addEventListener("keyup", (event) => { handleVoiceFilterKey(event) }
 // it does not fire when attached to the textbox directly
 document.addEventListener("selectionchange", (event) => { handleTextSelectionChange(event) });
 
+// Event listener for when paste new text into text area
+textbox.onpaste = handleTextPasteChange;
+
 // Event listener for speed slider change
 speedSlider.addEventListener("change", handleSpeedSliderChange);
 
+//#endregion
 
-//////// MAIN ////////
+//#region Event Handlers - Speech Recognition
+function handleClickMicButton() {
+  console.log('handleClickMicButton')
+  if (speechRecognition) {
+    if (!speechRecognizing) {
+      console.log('Starting with ',getCurrentVoice().lang)
+      speechRecognition.lang = getCurrentVoice().lang;
+      speechRecognition.start();
+    } else {
+      speechRecognition.stop();
+    }
+    speechRecognizing = !speechRecognizing;
+  }
+}
+
+function handleSpeechRecognitionStarted() {
+  console.log('handleSpeechRecognitionStarted')
+  micButton.classList.add("active"); // Visually indicate recording
+}
+
+function handleSpeechRecognitionStopped() {
+  console.log('handleSpeechRecognitionStopped')
+  micButton.classList.remove("active");
+}
+
+function handleSpeechRecognitionCapture(event) {
+  console.log('handleSpeechRecognitionCapture')
+  let transcript = "";
+  for (const result of event.results) {
+    console.log('result',result)
+    transcript += result[0].transcript;
+  }
+  textbox.value = transcript;
+  console.log('final',transcript)
+}
+
+//#endregion
+
+//region Event Listeners - Speech Recognition
+
+/*
+  Event listener for the clicking the mic button
+*/
+micButton.addEventListener("click", () => {
+  handleClickMicButton()
+});
+
+/*
+  Event listener for when speech recognition recording starts
+*/
+if (speechRecognition) {
+  speechRecognition.onstart = handleSpeechRecognitionStarted;
+  speechRecognition.onend = handleSpeechRecognitionStopped;
+  speechRecognition.onresult = handleSpeechRecognitionCapture;
+}
+
+//#endregion
+
+//#region Main
+
 // On page load, get user saved preferences (if any) and use them to build the page
 window.onload = () => {
   // Load voice list
@@ -251,3 +398,5 @@ window.onload = () => {
   // Set playback speed slider position
   updateSpeedDisplay();
 };
+
+//#endregion
