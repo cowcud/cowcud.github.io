@@ -72,7 +72,8 @@ label {
 /* Buttons area */
 
 #buttons-container {
-  display: none; /* Initially hidden */
+  display: none;
+  /* Initially hidden */
   font-size: 0.8em;
   padding-bottom: 20px;
 }
@@ -98,7 +99,8 @@ label {
 }
 
 #mic-button-span {
-  display: none; /* Initially hidden */
+  display: none;
+  /* Initially hidden */
   flex: 1;
 }
 
@@ -128,7 +130,8 @@ label {
 /* Voices area */
 
 #voice-container {
-  display: none; /* Initially hidden */
+  display: none;
+  /* Initially hidden */
 }
 
 #voice-dropdown {
@@ -152,8 +155,10 @@ label {
   top: 50%;
   transform: translateY(-50%);
   border: 5px solid transparent;
-  border-top-color: #ccc; /* Top border for down arrow */
-  border-bottom-color: transparent;  /* Hide bottom border */
+  border-top-color: #ccc;
+  /* Top border for down arrow */
+  border-bottom-color: transparent;
+  /* Hide bottom border */
 }
 
 #selected-voice,
@@ -168,7 +173,8 @@ label {
   overflow-y: scroll;
   position: relative;
   width: 100%;
-  display: none; /* Initially hidden */
+  display: none;
+  /* Initially hidden */
 }
 
 #voice-list div {
@@ -181,11 +187,69 @@ label {
 }
 
 #voice-filter-container {
-  position: sticky; /* Make the input sticky */
-  top: 0; /* Position it at the top of the list */
-  background-color: #fff; /* Set background color for better visibility */
-  border: 1px solid #ccc; /* Maintain border for input styling */
-  border-bottom: none; /* Remove bottom border to avoid double line */
-  width: calc(100% - 20px); /* Adjust width to match list content */
-  z-index: 1; /* Set higher z-index to appear above list content */
+  position: sticky;
+  /* Make the input sticky */
+  top: 0;
+  /* Position it at the top of the list */
+  background-color: #fff;
+  /* Set background color for better visibility */
+  border: 1px solid #ccc;
+  /* Maintain border for input styling */
+  border-bottom: none;
+  /* Remove bottom border to avoid double line */
+  width: calc(100% - 20px);
+  /* Adjust width to match list content */
+  z-index: 1;
+  /* Set higher z-index to appear above list content */
+}
+
+/* Mobile view */
+
+@media (max-width: 500px) {
+  /* Base styles */
+
+  button {
+    font-size: 1.2em;
+  }
+
+  input {
+    /* Smaller font size for small screens */
+    font-size: 0.5em;
+  }
+
+  /* Header area */
+
+  #heading {
+    font-size: 1.4em;
+  }
+
+  /* Text area */
+
+  textarea {
+    font-size: 0.8em;
+  }
+
+  textarea::placeholder {
+    font-size: 0.8em;
+  }
+
+  /* Buttons area */
+  
+  #buttons-container {
+    /* Smaller font size for small screens */
+    font-size: 0.5em;
+  }
+
+  #speak-button {
+    padding-left: 12px;
+    padding-right: 8px;
+  }
+
+  /* Voices area */
+  #selected-voice,
+  #voice-list {
+    /* Smaller font size for small screens */
+    font-size: 0.5em;
+  }
+
 }
