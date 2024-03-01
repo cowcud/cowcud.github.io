@@ -32,7 +32,7 @@ if (speechSynthesis) {
 
 // Enable the mic button if speech recognition is available
 if (speechRecognition) {
-  //TBD - micButtonSpan.style.display = "block"; // Turn on the microphone icon if the browser supports speech recognition
+  micButtonSpan.style.display = "block"; // Turn on the microphone icon if the browser supports speech recognition
   speechRecognition.interimResults = true; // Enable interim results for display
 } else {
   console.error("Speech Recognition API not supported");
@@ -330,38 +330,33 @@ speedSlider.addEventListener("change", handleSpeedSliderChange);
 
 //#region Event Handlers - Speech Recognition
 function handleClickMicButton() {
-  console.log('handleClickMicButton')
   if (speechRecognition) {
     if (!speechRecognizing) {
-      console.log('Starting with ',getCurrentVoice().lang)
-      speechRecognition.lang = getCurrentVoice().lang;
+      const currentVoice = getVoice(selectedVoiceSpan.textContent);
+      speechRecognition.lang = currentVoice.lang;
       speechRecognition.start();
     } else {
       speechRecognition.stop();
     }
-    speechRecognizing = !speechRecognizing;
   }
 }
 
 function handleSpeechRecognitionStarted() {
-  console.log('handleSpeechRecognitionStarted')
-  micButton.classList.add("active"); // Visually indicate recording
+  speechRecognizing = true;
+  micButton.classList.add("mic-active"); // Visually indicate recording
 }
 
 function handleSpeechRecognitionStopped() {
-  console.log('handleSpeechRecognitionStopped')
-  micButton.classList.remove("active");
+  speechRecognizing = false;
+  micButton.classList.remove("mic-active");
 }
 
 function handleSpeechRecognitionCapture(event) {
-  console.log('handleSpeechRecognitionCapture')
   let transcript = "";
   for (const result of event.results) {
-    console.log('result',result)
     transcript += result[0].transcript;
   }
   textbox.value = transcript;
-  console.log('final',transcript)
 }
 
 //#endregion

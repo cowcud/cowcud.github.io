@@ -12,8 +12,8 @@ body {
 input,
 button {
   width: 72px;
-  margin-left: 12px;
-  padding: 4px 12px;
+  margin-left: 8px;
+  padding: 4px 4px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.8em;
@@ -87,6 +87,7 @@ label {
 #speed-row {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
 }
 
 #speed-container {
@@ -94,7 +95,15 @@ label {
   margin-top: 6px;
 }
 
+#spacer-span {
+  flex: 0;
+}
+
 #speak-button-span {
+  flex: 1;
+}
+
+#stop-button-span {
   flex: 1;
 }
 
@@ -102,6 +111,10 @@ label {
   display: none;
   /* Initially hidden */
   flex: 1;
+}
+
+.mic-active {
+  background-color: #999;
 }
 
 #speed-label {
@@ -210,6 +223,10 @@ label {
 
   button {
     font-size: 1.2em;
+    width: 50px;
+    margin-left: 4px;
+    margin-right: 4px;
+    padding: 4px 0px;
   }
 
   input {
@@ -234,15 +251,23 @@ label {
   }
 
   /* Buttons area */
-  
+
   #buttons-container {
     /* Smaller font size for small screens */
     font-size: 0.5em;
   }
 
+  #speed-container {
+    min-width: 300px; /* Force wrap */
+    padding-bottom: 30px;
+  }
+
+  #spacer-span {
+    flex: 4; /* Force buttons to right side */
+  }
+
   #speak-button {
-    padding-left: 12px;
-    padding-right: 8px;
+    margin-left: 8px;
   }
 
   /* Voices area */
