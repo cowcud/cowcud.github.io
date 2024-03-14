@@ -4,6 +4,7 @@
 const buttonsContainer = document.getElementById("buttons-container");
 const voiceContainer = document.getElementById("voice-container");
 const textbox = document.getElementById("textbox");
+const speakButton = document.getElementById("speak-button");
 const micButtonSpan = document.getElementById("mic-button-span");
 const micButton = document.getElementById("mic-button");
 const voiceDropdown = document.getElementById("voice-dropdown");
@@ -13,6 +14,12 @@ const voiceFilter = document.getElementById("voice-filter");
 const voiceListContent = document.getElementById("voice-list-content");
 const speedSlider = document.getElementById("speed-slider");
 const speedDisplay = document.getElementById("speed-display");
+
+// Get query parameters
+const queryString = new URLSearchParams(window.location.search);
+let textToSpeak = queryString.get('t'); // Text for input box
+let langToSpeak = queryString.get('l'); // Language code e.g. en-GB, zh-HK
+let voiceToSpeak = queryString.get('v'); // Specific voice name to use
 
 // Get speech synthesizer and speech recognition
 let speechSynthesis = (window.speechSynthesis) ? window.speechSynthesis : null;
@@ -46,18 +53,32 @@ let availableVoices = [];
 
 // Get list of available voices provided by the speech synthesizer
 function loadVoices() {
+  // Prevent loading being done twice
+  if (availableVoices.length > 0) {
+    return;
+  }
+
+  // Get the available voices for this browser
   availableVoices = speechSynthesis.getVoices();
+
+  // Sort them by language code and then by name
+  availableVoices.sort((voice1, voice2) => {
+    // Compare languages (lower case for case-insensitive sorting)
+    if (voice1.lang.toLowerCase() < voice2.lang.toLowerCase()) return -1;
+    if (voice1.lang.toLowerCase() > voice2.lang.toLowerCase()) return 1;
+    // If languages are the same, compare names (lower case for case-insensitive sorting)
+    return voice1.name.toLowerCase().localeCompare(voice2.name.toLowerCase());
+  });
+
   console.log(`Found ${availableVoices.length} voices`);
   populateVoicesDropdown(availableVoices);
 };
-
-speechSynthesis.onvoiceschanged = loadVoices; // Fix for issue where voices don't always load on page load
 
 /*
   Populate the voices dropdown with the (possibly filtered) voice list
 */
 function populateVoicesDropdown(voices) {
-  // 
+  // Get current voice and update the name displayed above the filter
   const currentVoice = getCurrentVoice();
   selectedVoiceSpan.textContent = buildVoiceName(currentVoice);
 
@@ -92,19 +113,32 @@ function populateVoicesDropdown(voices) {
 function toggleVoiceList() {
   voiceList.style.display = voiceList.style.display === "block" ? "none" : "block";
   if (voiceList.style.display === "block") {
-    filterVoices(); // Filter the list with previous filter value (if any)
+    filterVoicesByName(); // Filter the list with previous filter value (if any)
   }
 }
 
 /*
-  Get user search term from the input box and filter the full voice list on it
+  Filter the available voices by name (defualt to using search box input)
 */
-function filterVoices() {
-  const searchTerm = voiceFilter.value.toLowerCase();
+function filterVoicesByName(name) {
+  const searchTerm = voiceFilter.value.toLowerCase().trim() || name || '';
   const filteredVoices = availableVoices.filter((voice) =>
     buildVoiceName(voice).toLowerCase().includes(searchTerm)
   );
+
   populateVoicesDropdown(filteredVoices);
+  return filteredVoices;
+}
+
+/*
+  Filter the available voices by the language code
+*/
+function filterVoicesByLang(lang) {
+  const filteredVoices = availableVoices.filter((voice) =>
+    voice.lang.toLowerCase() === lang.toLowerCase().trim()
+  );
+  populateVoicesDropdown(filteredVoices);
+  return filteredVoices;
 }
 
 /*
@@ -150,7 +184,7 @@ function getVoice(voiceName) {
   Change current voice when user selects a voice from the dropdown,
   either by clicking it or hitting Enter when scrolling the list of voices
 */
-function selectVoice(selectedVoiceDiv) {
+function selectVoice(selectedVoiceDiv, onlySelect = false) {
   // Remove "selected" class from previously selected voice
   const previouslySelected = voiceListContent.querySelector(".selected");
   if (previouslySelected) {
@@ -166,6 +200,13 @@ function selectVoice(selectedVoiceDiv) {
 
   // Store selected voice for future use
   localStorage.setItem("selectedVoice", JSON.stringify(newVoice));
+
+  // If selecting the voice is the only thing we are doing, return now
+  if (onlySelect) {
+    return;
+  }
+
+  // Otherwise, continue....
 
   // Hide pop-up
   toggleVoiceList();
@@ -197,6 +238,8 @@ function startSpeaking() {
   const matchingVoice = availableVoices.find(
     (voice) => buildVoiceName(voice) === buildVoiceName(currentVoice)
   );
+  console.log(currentVoice)
+  console.log(matchingVoice)
 
   utterance.voice = matchingVoice;
   utterance.lang = utterance.voice.lang; // Ensure lang set so works on Android
@@ -261,7 +304,7 @@ function handleVoiceFilterKey(event) {
       selectVoice(firstVoiceDiv); // Select the first voice
     }
   } else {
-    filterVoices(); // Filter voices as usual on other key presses
+    filterVoicesByName(); // Filter voices as usual on other key presses
   }
 }
 
@@ -289,7 +332,7 @@ function handleTextSelectionChange(event) {
   Event handler called when user pastes new text into the text box
 */
 function handleTextPasteChange(event) {
-  window.setTimeout(startSpeaking,1)
+  window.setTimeout(startSpeaking, 1)
 }
 
 /*
@@ -384,14 +427,64 @@ if (speechRecognition) {
 //#region Main
 
 // On page load, get user saved preferences (if any) and use them to build the page
-window.onload = () => {
+function doPageLoad() {
+  if (availableVoices.length) {
+    return; // Prevent running multiple times
+  }
+
   // Load voice list
   loadVoices();
 
-  // Update default selected voice and 
+  // Update default selected voice
   populateVoicesDropdown(availableVoices);
+
   // Set playback speed slider position
-  updateSpeedDisplay();
+  updateSpeedDisplay()
+
+  // If voice parameter specified, select the actual voice
+  let foundSpecifiedVoice = false;
+  if (voiceToSpeak) {
+    const matchingDiv = voiceListContent.querySelector(`div[data-value="${voiceToSpeak}"]`);
+    if (matchingDiv) {
+      selectVoice(matchingDiv, true); // Select the voice
+      foundSpecifiedVoice = true;
+    }
+    else {
+      // If couldn't find that voice, try and fall back to the first one in the specified language
+      const regex = /\(([a-z]{2}-[A-Z]{2})\)$/;
+      const match = voiceToSpeak.match(regex);
+      if (match) {
+        langToSpeak = match[1];
+      }
+    }
+  }
+
+
+  // If language code parameter specified, and we didn't already find a voice,
+  // select the first available voice for that language
+  if (langToSpeak && !foundSpecifiedVoice) {
+    const filteredVoices = filterVoicesByLang(langToSpeak);
+    if (filteredVoices.length) {
+      // Update the dropdown to just show voices for the specified language
+      availableVoices = filteredVoices;
+      populateVoicesDropdown(availableVoices);;
+    }
+
+    const firstVoiceDiv = voiceListContent.querySelector("div");
+    if (firstVoiceDiv) {
+      selectVoice(firstVoiceDiv, true); // Select the first voice for that language
+    }
+  }
+
+  // If text parameter specified, start speaking immediately
+  if (textToSpeak) {
+    textbox.value = textToSpeak;
+    startSpeaking();
+  }
 };
+
+window.onload = doPageLoad;
+speechSynthesis.onvoiceschanged = doPageLoad; // Fix for issue where voices don't always load on page load
+
 
 //#endregion
