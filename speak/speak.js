@@ -20,6 +20,7 @@ const queryString = new URLSearchParams(window.location.search);
 let textToSpeak = queryString.get('t'); // Text for input box
 let langToSpeak = queryString.get('l'); // Language code e.g. en-GB, zh-HK
 let voiceToSpeak = queryString.get('v'); // Specific voice name to use
+let speedToSpeak = queryString.get('s'); // Speed to use (%)
 
 // Get speech synthesizer and speech recognition
 let speechSynthesis = (window.speechSynthesis) ? window.speechSynthesis : null;
@@ -134,9 +135,11 @@ function filterVoicesByName(name) {
   Filter the available voices by the language code
 */
 function filterVoicesByLang(lang) {
-  const filteredVoices = availableVoices.filter((voice) =>
-    voice.lang.toLowerCase() === lang.toLowerCase().trim()
-  );
+  const filteredVoices = availableVoices.filter((voice) => {
+    const v = voice.lang.toLowerCase().replace(/[-_]/,'').replace(/#.*/,'');
+    const l = lang.toLowerCase().trim().replace(/[-_]/,'').replace(/#.*/,'');
+    return v === l;
+  });
   populateVoicesDropdown(filteredVoices);
   return filteredVoices;
 }
@@ -437,6 +440,13 @@ function doPageLoad() {
 
   // Update default selected voice
   populateVoicesDropdown(availableVoices);
+
+  // If user specified a particular speed %age, then use that
+  console.log(parseInt(speedToSpeak))
+  if (speedToSpeak && parseInt(speedToSpeak)) {
+    localStorage.setItem("selectedSpeed", parseInt(speedToSpeak)/100);
+  }
+
 
   // Set playback speed slider position
   updateSpeedDisplay()
