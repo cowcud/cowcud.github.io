@@ -136,8 +136,8 @@ function filterVoicesByName(name) {
 */
 function filterVoicesByLang(lang) {
   const filteredVoices = availableVoices.filter((voice) => {
-    const v = voice.lang.toLowerCase().replace(/[-_]/,'').replace(/#.*/,'');
-    const l = lang.toLowerCase().trim().replace(/[-_]/,'').replace(/#.*/,'');
+    const v = voice.lang.toLowerCase().replace(/[-_]/g,'').replace(/#.*/,'');
+    const l = lang.toLowerCase().trim().replace(/[-_]/g,'').replace(/#.*/,'');
     return v === l;
   });
   populateVoicesDropdown(filteredVoices);
