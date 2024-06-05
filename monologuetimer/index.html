@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Image Monologue Timer</title>
+    <link rel="stylesheet" href="./monologuetimer.css?v=20240605_01">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+</head>
+<body onLoad="loadImage()">
+    <h1>Random Image Monologue Timer</h1>
+
+    <div class="iframe-container">
+        <iframe id="imageFrame"></iframe>
+    </div>
+    <br>
+    <button id="reloadButton" class="icon-button">
+        <i class="fa fa-refresh" aria-hidden="true"></i>
+    </button>
+    <br>
+
+    <div id="durationButtons">
+        <button onclick="startTimer(3)">3 minutes</button>
+        <button onclick="startTimer(2)">2 minutes</button>
+        <button onclick="startTimer(1)">1 minute</button>
+    </div>
+
+    <div id="timer" style="display: none;" onclick="stopTimer()">00:00</div>
+    
+    <script src="./monologuetimer.js?v=20240605_01">
+    </script>
+</body>
+</html>
