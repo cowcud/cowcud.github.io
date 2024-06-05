@@ -12,9 +12,7 @@ h1 {
 }
 .iframe-container {
     position: relative;
-    width: 70%;
     margin: 0 auto;
-    padding-bottom: 70%; /* 1:1 Aspect Ratio */
     height: 0;
     border: 1px solid #ccc;
 }
@@ -33,13 +31,47 @@ h1 {
     margin: 0 auto;
 }
 button {
-    margin: 10px 5px;
-    padding: 10px 10px;
-    font-size: 0.8em;
+    margin: 40px 20px;
+    padding: 20px 20px;
     max-width: 30%;
 }
 #timer {
     font-size: 24px;
     margin-top: 20px;
     color: white;
+}
+
+/* Responsive */
+@media (min-width: 0px) {
+  .iframe-container {
+    width: 90%;
+    padding-bottom: 90%;
+  }
+  button {
+    margin: 20px 10px;
+    padding: 5px 5px;
+    font-size: 1.4em;
+  }
+}
+@media (min-width: 700px) {
+  .iframe-container {
+    width: 70%;
+    padding-bottom: 70%;
+  }
+  button {
+    margin: 20px 20px;
+    padding: 10px 10px;
+    font-size: 1.7em;
+  }
+}
+@media (min-width: 1000px) {
+  .iframe-container {
+    width: 30%;
+    padding-bottom: 30%;
+  }
+  button {
+    margin: 20px 20px;
+    padding: 10px 20px;
+    font-size: 1.9em;
+  }
 }
